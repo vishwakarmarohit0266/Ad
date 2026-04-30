@@ -1,11 +1,320 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta http-equiv="refresh" content="3; url=https://vishwakarmarohit0266.github.io/Ad/main/src/index.html">
-  <title>Redirecting...</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Video Feed & Ads</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f1f5f9;
+            --muted: #94a3b8;
+            --primary: #38bdf8;
+        }
+
+        .dark {
+            --bg: #f5f7fb;
+            --card: #ffffff;
+            --text: #222;
+            --muted: #666;
+            --primary: #0066cc;
+        }
+
+        /* Ad System Styles */
+        #ad-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            z-index: 999999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            transition: opacity 0.8s ease-out;
+        }
+
+        #ad-video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            cursor: pointer;
+        }
+
+        .ad-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), rgba(0,0,0,0));
+            color: #fff;
+            padding: 20px 30px;
+            font-size: 18px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        #ad-sound-toggle {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.4);
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            z-index: 20;
+            backdrop-filter: blur(5px);
+        }
+
+        /* Main Content Styles */
+        body {
+            margin: 0;
+            font-family: Segoe UI, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 20px;
+            overflow: hidden; /* Locked until ads finish */
+        }
+
+        .modal {
+            display: block;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background: linear-gradient(90deg, #FF8B00 0%, #ffffff, #43a047 100%);
+            color: rgba(0, 78, 255, 1);
+            padding: 20px;
+            margin: 15% auto;
+            width: 300px;
+            text-align: center;
+            border-radius: 8px;
+        }
+
+        header { text-align: center; }
+        .controls { display: flex; justify-content: center; gap: 10px; margin: 15px 0; flex-wrap: wrap; }
+        input { padding: 8px 14px; border-radius: 20px; border: none; }
+        button { padding: 8px 14px; border-radius: 20px; border: none; background: var(--primary); color: white; cursor: pointer; }
+        
+        .category-bar { overflow-x: auto; white-space: nowrap; padding: 5px 0; margin-bottom: 10px; scrollbar-width: none; }
+        .category-bar::-webkit-scrollbar { height: 0; }
+        
+        #video-feed {
+            display: grid;
+            margin: auto;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            width: 90%;
+        }
+
+        .video-card { border-radius: 16px; overflow: hidden; box-shadow: 0 8px 16px rgba(0,0,0,.3); position: relative; }
+        video { width: 100%; height: 300px; background: #0f172a; }
+        
+        .menu-box {
+            position: absolute; top: 45px; right: 2; width: 200px;
+            background: var(--card); border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,.4); display: none;
+            flex-direction: column; overflow: hidden; z-index: 9999;
+        }
+        
+        .menu-item { padding: 12px 16px; cursor: pointer; transition: 0.2s; }
+        .menu-item:hover { background: var(--primary); color: black; }
+        
+        .video-watermark { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.6); color: white; padding: 5px 12px; border-radius: 6px; font-size: 12px; z-index: 5; }
+        .pip-btn { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,.6); color: white; padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; z-index: 20; }
+    </style>
 </head>
 <body>
-  <p>Redirecting you to the new page...</p>
+
+    <!-- AD OVERLAY SECTION -->
+    <div id="ad-container">
+        <div class="ad-header">
+            <span>Ad <span id="ad-current-count">1</span>/3</span>
+            <span position="left: 50px;">Skip in <span id="ad-timer">0</span>s</span>
+        </div>
+        <video id="ad-video" autoplay muted playsinline></video>
+        <button id="ad-sound-toggle">
+            <span id="ad-sound-icon">🔇</span> <span id="ad-sound-text">Unmute</span>
+        </button>
+    </div>
+
+    <!-- MAIN WEBSITE CONTENT -->
+    <div class="modal" id="popup">
+        <div class="modal-content">
+            <h1>Welcome!</h1>
+            <p>Welcome to our webpage. 🤗</p>
+            <button onclick="closePopup()">OK</button>
+        </div>
+    </div>
+
+    <header>
+        <h1><i class="fa-solid fa-video"></i> My Advanced Video Feed</h1>
+        <div class="controls">
+            <div class="menu-wrapper" style="position:relative;">
+                <button id="menu-btn"><i class="fa-solid fa-bars"></i></button>
+                <div id="menu-box" class="menu-box">
+                    <div class="menu-item" onclick="showWatchHistory()">📺 Watch History</div>
+                    <div class="menu-item" onclick="showLiked()">❤️ Liked Videos</div>
+                    <div class="menu-item" onclick="showSaved()">📌 Watch Later</div>
+                    <hr style="border:none; border-top:1px solid var(--muted);">
+                    <div class="menu-item" onclick="clearHistory()">🧹 Clear History</div>
+                    <div class="menu-item" onclick="toggleDark()">🌙 Dark Mode</div>
+                </div>
+            </div>
+            <input type="text" id="search" placeholder="Search videos...">
+            <button onclick="toggleDark()">🌙</button>
+        </div>
+
+        <div class="category-bar">
+            <div id="filters" style="display:inline-flex; gap:10px; padding:0 10px;">
+                <button class="filter-btn" data-category="all">All</button>
+                <button class="filter-btn" data-category="animation">Animation</button>
+                <button class="filter-btn" data-category="nature">Nature</button>
+                <button class="filter-btn" data-category="wildlife">Wildlife</button>
+            </div>
+        </div>
+    </header>
+
+    <main id="video-feed"></main>
+
+    <script>
+        // --- AD SYSTEM LOGIC ---
+        const adQueue = [
+            { src: 'https://raw.githubusercontent.com/vishwakarmarohit0266/Ad/main/src/video/ad1.mp4', url: 'https://example.com/1', duration: 10 },
+            { src: 'https://raw.githubusercontent.com/vishwakarmarohit0266/Ad/main/src/video/ad1.mp4', url: 'https://example.com/2', duration: 15 },
+            { src: 'https://raw.githubusercontent.com/vishwakarmarohit0266/Ad/main/src/video/ad1.mp4', url: 'https://example.com/3', duration: 50 }
+        ];
+
+        let currentAdIdx = 0;
+        const adVideo = document.getElementById('ad-video');
+        const adContainer = document.getElementById('ad-container');
+        const adTimer = document.getElementById('ad-timer');
+        const adCount = document.getElementById('ad-current-count');
+        const adSoundBtn = document.getElementById('ad-sound-toggle');
+
+        adSoundBtn.onclick = (e) => {
+            e.stopPropagation();
+            adVideo.muted = !adVideo.muted;
+            document.getElementById('ad-sound-icon').innerText = adVideo.muted ? '🔇' : '🔊';
+            document.getElementById('ad-sound-text').innerText = adVideo.muted ? 'Unmute' : 'Mute';
+        };
+
+        function updateAdTimer() {
+            let rem = adVideo.duration ? (adVideo.duration - adVideo.currentTime) : 5;
+            adTimer.innerText = Math.ceil(rem);
+        }
+
+        function playNextAd() {
+            if (currentAdIdx >= adQueue.length) {
+                exitAds();
+                return;
+            }
+            adCount.innerText = currentAdIdx + 1;
+            adVideo.src = adQueue[currentAdIdx].src;
+            adVideo.play().catch(() => console.log("Ad autoplay blocked"));
+        }
+
+        function exitAds() {
+            adContainer.style.opacity = '0';
+            setTimeout(() => {
+                adContainer.remove();
+                document.body.style.overflow = 'auto'; // Enable scrolling
+            }, 800);
+        }
+
+        adVideo.ontimeupdate = updateAdTimer;
+        adVideo.onended = () => { currentAdIdx++; playNextAd(); };
+        adVideo.onclick = () => window.open(adQueue[currentAdIdx].url, '_blank');
+
+        // Start Ads
+        playNextAd();
+
+        // --- MAIN FEED LOGIC ---
+        const videoFeed = document.getElementById('video-feed');
+        const searchInput = document.getElementById('search');
+        const filterButtons = document.querySelectorAll('.filter-btn');
+
+        const videos = [
+            { src:'https://www.w3schools.com/html/mov_bbb.mp4', title:'Big Buck Bunny', desc:'Classic animation', category:'animation' },
+            { src:'https://www.w3schools.com/html/movie.mp4', title:'Nature Bear', desc:'Wildlife clip', category:'wildlife' },
+            { src:'https://www.w3schools.com/html/mov_bbb.mp4', title:'Cloudy Day', desc:'Nature scene', category:'nature' }
+        ];
+
+        let activeCategory = "all";
+
+        function renderVideos(query = "") {
+            videoFeed.innerHTML = "";
+            videos.filter(v => 
+                (activeCategory === "all" || v.category === activeCategory) &&
+                (v.title.toLowerCase().includes(query) || v.desc.toLowerCase().includes(query))
+            ).forEach(v => {
+                const card = document.createElement('div');
+                card.className = 'video-card';
+                card.innerHTML = `
+                    <div class="pip-btn">PiP</div>
+                    <div class="video-watermark">MyVideoApp</div>
+                    <video controls preload="metadata" playsinline class="feed-video">
+                        <source src="${v.src}" type="video/mp4">
+                    </video>
+                    <div style="padding:15px;">
+                        <h3>${v.title}</h3>
+                        <p style="color:var(--muted);">${v.desc}</p>
+                    </div>
+                `;
+                videoFeed.appendChild(card);
+            });
+            attachControls();
+        }
+
+        function attachControls() {
+            const vids = document.querySelectorAll('.feed-video');
+            vids.forEach(v => {
+                v.onplay = () => vids.forEach(o => o !== v && o.pause());
+            });
+            // PiP Logic
+            document.querySelectorAll('.pip-btn').forEach((btn, i) => {
+                btn.onclick = () => {
+                    const v = document.querySelectorAll('.feed-video')[i];
+                    if (document.pictureInPictureElement) document.exitPictureInPicture();
+                    else v.requestPictureInPicture();
+                };
+            });
+        }
+
+        searchInput.oninput = (e) => renderVideos(e.target.value.toLowerCase());
+
+        filterButtons.forEach(btn => {
+            btn.onclick = () => {
+                filterButtons.forEach(b => b.style.background = '#1e293b');
+                btn.style.background = '#38bdf8';
+                activeCategory = btn.dataset.category;
+                renderVideos(searchInput.value.toLowerCase());
+            };
+        });
+
+        const menuBtn = document.getElementById("menu-btn");
+        const menuBox = document.getElementById("menu-box");
+        menuBtn.onclick = () => menuBox.style.display = menuBox.style.display === "flex" ? "none" : "flex";
+
+        function toggleDark() { document.body.classList.toggle("dark"); }
+        function closePopup() { document.getElementById("popup").style.display = "none"; }
+
+        // Initial Load
+        renderVideos();
+    </script>
 </body>
 </html>
 
+  
